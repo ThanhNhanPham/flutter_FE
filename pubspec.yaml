@@ -1,0 +1,40 @@
+name: flutter_baitap153
+description: "A new Flutter project order food."
+publish_to: 'none' 
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_bloc: ^9.1.0
+  shared_preferences: ^2.1.0
+  http: ^1.2.2
+  intl: ^0.19.0
+  signalr_netcore: ^1.4.1
+  qr_flutter: ^4.1.0
+  local_auth: ^2.1.7
+  url_launcher: ^6.3.1
+  barcode_scan2: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+
+  
+  uses-material-design: true
+  assets:
+    - assets/images/youtube_logo.webp
+    - assets/images/instagram_logo.png
+    - assets/images/logo.png
+
+  
