@@ -1,6 +1,6 @@
-# flutter_baitap153
+# Flutter order food app
 
-A new Flutter project.
+A new Flutter project by Nhan and Nguyen
 
 ## Getting Started
 
