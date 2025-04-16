@@ -7,8 +7,7 @@ class UserManagementAdminScreen extends StatefulWidget {
       _UserManagementAdminScreenState();
 }
 
-class _UserManagementAdminScreenState
-    extends State<UserManagementAdminScreen> {
+class _UserManagementAdminScreenState extends State<UserManagementAdminScreen> {
   final UserService userService = UserService();
   List<dynamic> adminUsers = [];
   List<dynamic> regularUsers = [];
@@ -42,14 +41,14 @@ class _UserManagementAdminScreenState
   Future<void> _deleteUser(BuildContext context, String userId) async {
     try {
       await userService.deleteUser(userId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Xóa người dùng thành công!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Xóa người dùng thành công!")));
       _loadUsersForTabs();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Không thể xóa người dùng: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Không thể xóa người dùng: $e")));
     }
   }
 
@@ -68,15 +67,9 @@ class _UserManagementAdminScreenState
             indicatorColor: Colors.white, // Đường gạch dưới màu trắng
             indicatorWeight: 3,
             labelColor: Colors.white, // Màu chữ khi Tab đang được chọn
-            unselectedLabelColor: Colors.white60, // Màu chữ khi Tab không được chọn
-            tabs: [
-              Tab(
-                text: "Quản trị viên",
-              ),
-              Tab(
-                text: "Người dùng",
-              ),
-            ],
+            unselectedLabelColor:
+                Colors.white60, // Màu chữ khi Tab không được chọn
+            tabs: [Tab(text: "Quản trị viên"), Tab(text: "Người dùng")],
           ),
         ),
         body: Container(
@@ -120,14 +113,39 @@ class _UserManagementAdminScreenState
             color: Colors.redAccent, // Màu nền khi vuốt
             child: Icon(Icons.delete, color: Colors.white), // Biểu tượng xóa
           ),
-          onDismissed: (direction) {
-            _deleteUser(context, user['id']); // Gọi hàm xóa khi vuốt
+          confirmDismiss: (direction) async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Xác nhận xóa'),
+                    content: Text(
+                      'Bạn có chắc chắn muốn xóa người dùng này không?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text('Xóa', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+            );
+
+            if (confirm == true) {
+              await _deleteUser(context, user['id']);
+            }
+
+            return confirm; // true: cho phép xóa, false: giữ nguyên item
           },
           child: Container(
-            width: double.infinity, // Chiều ngang 100% màn hình
+            width: double.infinity,
             margin: EdgeInsets.only(bottom: 12),
             child: Card(
-              color: Color(0xFFC8E6C9), // Nền card màu xanh lá nhạt
+              color: Color(0xFFC8E6C9),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -142,24 +160,18 @@ class _UserManagementAdminScreenState
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF388E3C), // Màu xanh lá đậm
+                        color: Color(0xFF388E3C),
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       "Email: ${user['email'] ?? 'Không có email'}",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[800],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[800]),
                     ),
                     SizedBox(height: 4),
                     Text(
                       "ID: ${user['id']}",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -176,10 +188,7 @@ class _UserManagementAdminScreenState
     return Center(
       child: Text(
         message,
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
       ),
     );
   }
