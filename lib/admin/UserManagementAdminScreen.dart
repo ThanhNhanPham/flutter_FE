@@ -82,7 +82,6 @@ class _UserManagementAdminScreenState extends State<UserManagementAdminScreen> {
                   : adminUsers.isEmpty
                   ? _buildEmptyState("Không tìm thấy quản trị viên.")
                   : _buildUserList(adminUsers),
-
               // Tab User
               isLoading
                   ? Center(child: CircularProgressIndicator())

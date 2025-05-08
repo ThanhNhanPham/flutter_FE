@@ -139,7 +139,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Category Management"),
+        title: Text("Quản lý danh mục"),
         backgroundColor: Colors.green, // AppBar màu xanh lá cây
         centerTitle: true,
         elevation: 5,

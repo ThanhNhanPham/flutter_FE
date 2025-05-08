@@ -67,106 +67,182 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  // Future<void> login() async {
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   try {
+  //     final response = await authService.login(
+  //       usernameController.text,
+  //       passwordController.text,
+  //     );
+
+  //     if (response['status'] == true) {
+  //       final prefs = await SharedPreferences.getInstance();
+
+  //       final token = response['token'];
+  //       final userId = response['userId'];
+  //       final role = response['role'];
+  //       final password = passwordController.text;
+
+  //       if (token != null && userId != null && role != null) {
+  //         await prefs.setString("jwt_token", token);
+  //         await prefs.setString("user_id", userId);
+  //         await prefs.setString("user_role", role);
+  //         await saveUsername(usernameController.text);
+
+  //         if (password == "Password@123") { // Dùng if để xét tài khoản
+  //           // Lưu trạng thái buộc đổi mật khẩu
+  //           await prefs.setBool("force_password_change", true);
+
+  //           // Điều hướng đến màn hình đổi mật khẩu
+  //           Navigator.pushReplacement(
+  //             context,
+  //             MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
+  //           );
+  //         } else {
+  //           // Kiểm tra nếu không cần đổi mật khẩu
+  //           final forcePasswordChange = prefs.getBool("force_password_change") ?? false;
+  //           if (!forcePasswordChange) {
+  //             navigateToRoleScreen(role);
+  //           } else {
+  //             // Hiển thị thông báo nếu cố đăng nhập mà không đổi mật khẩu
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               SnackBar(content: Text("Please change your password first.")),
+  //             );
+  //           }
+  //         }
+  //       } else {
+  //         throw Exception("Dữ liệu trả về thiếu thông tin");
+  //       }
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Login failed: ${response['message']}")),
+  //       );
+  //     }
+  //   } catch (error) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Error: ${error.toString()}")),
+  //     );
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
   Future<void> login() async {
-    setState(() {
-      isLoading = true;
-    });
+  final username = usernameController.text.trim();
+  final password = passwordController.text;
 
-    try {
-      final response = await authService.login(
-        usernameController.text,
-        passwordController.text,
-      );
+  if (username.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.")),
+    );
+    return;
+  }
 
-      if (response['status'] == true) {
-        final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    isLoading = true;
+  });
 
-        final token = response['token'];
-        final userId = response['userId'];
-        final role = response['role'];
-        final password = passwordController.text;
+  try {
+    final response = await authService.login(username, password);
 
-        if (token != null && userId != null && role != null) {
-          await prefs.setString("jwt_token", token);
-          await prefs.setString("user_id", userId);
-          await prefs.setString("user_role", role);
-          await saveUsername(usernameController.text);
+    if (response['status'] == true) {
+      final prefs = await SharedPreferences.getInstance();
 
-          if (password == "Password@123") { // Dùng if để xét tài khoản
-            // Lưu trạng thái buộc đổi mật khẩu
-            await prefs.setBool("force_password_change", true);
+      final token = response['token'];
+      final userId = response['userId'];
+      final role = response['role'];
 
-            // Điều hướng đến màn hình đổi mật khẩu
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
-            );
-          } else {
-            // Kiểm tra nếu không cần đổi mật khẩu
-            final forcePasswordChange = prefs.getBool("force_password_change") ?? false;
-            if (!forcePasswordChange) {
-              navigateToRoleScreen(role);
-            } else {
-              // Hiển thị thông báo nếu cố đăng nhập mà không đổi mật khẩu
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Please change your password first.")),
-              );
-            }
-          }
+      if (token != null && userId != null && role != null) {
+        // ✅ Lưu session
+        await prefs.setString("jwt_token", token);
+        await prefs.setString("user_id", userId);
+        await prefs.setString("user_role", role);
+        await prefs.setString("savedUsername", username); // ← Thêm dòng này để dùng cho vân tay
+
+        if (password == "Password@123") {
+          await prefs.setBool("force_password_change", true);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
+          );
         } else {
-          throw Exception("Dữ liệu trả về thiếu thông tin");
+          final forcePasswordChange = prefs.getBool("force_password_change") ?? false;
+          if (!forcePasswordChange) {
+            navigateToRoleScreen(role);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Vui lòng đổi mật khẩu trước khi tiếp tục.")),
+            );
+          }
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Login failed: ${response['message']}")),
-        );
+        throw Exception("Dữ liệu trả về thiếu thông tin");
       }
-    } catch (error) {
+    } else {
+      // ❌ Nếu login fail → xóa token cũ (nếu có)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove("jwt_token");
+      await prefs.remove("user_id");
+      await prefs.remove("user_role");
+      await prefs.remove("savedUsername");
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${error.toString()}")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-
-  Future<void> loginWithFingerprint() async {
-    try {
-      final isAvailable = await localAuth.canCheckBiometrics;
-      if (!isAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Fingerprint authentication not available.")),
-        );
-        return;
-      }
-
-      final authenticated = await localAuth.authenticate(
-        localizedReason: 'Please authenticate to login',
-        options: const AuthenticationOptions(biometricOnly: true),
-      );
-
-      if (authenticated) {
-        final prefs = await SharedPreferences.getInstance();
-        final role = prefs.getString("user_role") ?? '';
-
-        if (savedUsername.isNotEmpty && role.isNotEmpty) {
-          navigateToRoleScreen(role);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text("No saved login session. Please login manually.")),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.toString()}")),
+        SnackBar(content: Text("Đăng nhập thất bại: ${response['message'] ?? 'Lỗi không xác định'}")),
       );
     }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Lỗi hệ thống: ${error.toString()}")),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
   }
+}
+
+
+
+ Future<void> loginWithFingerprint() async {
+  try {
+    final isAvailable = await localAuth.canCheckBiometrics;
+    if (!isAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Fingerprint authentication not available.")),
+      );
+      return;
+    }
+
+    final authenticated = await localAuth.authenticate(
+      localizedReason: 'Please authenticate to login',
+      options: const AuthenticationOptions(biometricOnly: true),
+    );
+
+    if (authenticated) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUsername = prefs.getString("savedUsername") ?? '';
+      final role = prefs.getString("user_role") ?? '';
+
+      if (savedUsername.isNotEmpty && role.isNotEmpty) {
+        navigateToRoleScreen(role);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("No saved login session. Please login manually.")),
+        );
+      }
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: ${e.toString()}")),
+    );
+  }
+}
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -268,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         else
                           SizedBox(height: 20),
-                        _buildHelpLink(),
+                        _buildHelpLink(context),// truyền vào context của widget cha
                         
                         SizedBox(height: 20),
                         ElevatedButton(
@@ -370,27 +446,30 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildHelpLink() {
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          text: 'Đăng nhập không được? ',
-          style: TextStyle(color: Colors.black, fontSize: 14),
-          children: [
-            TextSpan(
-              text: 'Xem hướng dẫn tại đây',
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => _launchUrl(
-                  'https://qlcntt.hutech.edu.vn/chi-tiet-ho-tro/1007011',
-                  'Không thể mở liên kết.',
-                ),
-            ),
-          ],
-        ),
+  Widget _buildHelpLink(BuildContext context) {
+  return Center(
+    child: RichText(
+      text: TextSpan(
+        text: 'Đăng nhập không được? ',
+        style: const TextStyle(color: Colors.black, fontSize: 14),
+        children: [
+          TextSpan(
+            text: 'Xem hướng dẫn tại đây',
+            style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng liên hệ với admin qua SDT 0123456789 để được hỗ trợ. Xin cảm ơn'),
+                  ),
+                );
+              },
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSocialLinks() {
     return Row(

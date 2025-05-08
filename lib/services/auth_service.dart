@@ -44,8 +44,8 @@ class AuthService {
       String username,
       String email,
       String password, {
-        String? fullName,
-        String? role,
+      String? fullName,
+      String? role,
       }) async {
     final url = Uri.parse("${Config.apiBaseUrl}/api/Authenticate/register");
     final body = {
